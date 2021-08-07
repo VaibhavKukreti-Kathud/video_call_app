@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1089153994754",
+    "project_id": "video-calling--skype-clone",
+    "storage_bucket": "video-calling--skype-clone.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089153994754:android:315af1daddafbfb97f571b",
+        "android_client_info": {
+          "package_name": "com.example.video_call_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1089153994754-8k4bc9on0gjn3oln6bd01kqnhpgbrah7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.video_call_app",
+            "certificate_hash": "c14822fd7d77fc7a6d68641442afcca046f23085"
+          }
+        },
+        {
+          "client_id": "1089153994754-pu45k90qv10v0dhgrv369fie02cva2c7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATuE6dFoonigIsaWpolDXAMCA9eorMTxE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1089153994754-pu45k90qv10v0dhgrv369fie02cva2c7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

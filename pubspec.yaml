@@ -1,0 +1,43 @@
+---
+name: video_call_app
+description: A new Flutter project.
+version: 1.0.0+1
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+
+  #agora
+  agora_rtc_engine: ^4.0.6
+  agora_uikit: ^0.0.3
+  permission_handler: ^8.1.4+2
+
+  #image
+  image: ^3.0.2
+  image_picker: ^0.8.3
+  meta: null
+  path_provider: ^2.0.2
+  cupertino_icons: ^1.0.2
+  cached_network_image: ^3.1.0
+
+  #firebase
+  cloud_firestore: ^2.4.0
+  firebase_auth: ^3.0.1
+  firebase_core: ^1.4.0
+  firebase_storage: null
+  google_sign_in: ^5.0.5
+
+  #Ui
+  font_awesome_flutter: ^9.1.0
+  shimmer: ^2.0.0
+  emoji_picker_flutter: ^1.0.6
+
+  #STATE management
+  provider: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  uses-material-design: true

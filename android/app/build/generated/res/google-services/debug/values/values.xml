@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">1089153994754-pu45k90qv10v0dhgrv369fie02cva2c7.apps.googleusercontent.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">1089153994754</string>
+    <string name="google_api_key" translatable="false">AIzaSyATuE6dFoonigIsaWpolDXAMCA9eorMTxE</string>
+    <string name="google_app_id" translatable="false">1:1089153994754:android:315af1daddafbfb97f571b</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyATuE6dFoonigIsaWpolDXAMCA9eorMTxE</string>
+    <string name="google_storage_bucket" translatable="false">video-calling--skype-clone.appspot.com</string>
+    <string name="project_id" translatable="false">video-calling--skype-clone</string>
+</resources>
