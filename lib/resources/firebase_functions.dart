@@ -13,6 +13,8 @@ class FirebaseMethods {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   late Reference _reference;
+  static final CollectionReference _userCollection =
+      firestore.collection(USERS_COLLECTION);
   static final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   //AppUser class
@@ -59,10 +61,7 @@ class FirebaseMethods {
       profilePhoto: currentUser.photoURL!,
     );
 
-    firestore
-        .collection(USERS_COLLECTION)
-        .doc(currentUser.uid)
-        .set(user.toMap(user));
+    _userCollection.doc(currentUser.uid).set(user.toMap(user));
   }
 
   //pata chal he gya hoga naam se
@@ -92,13 +91,14 @@ class FirebaseMethods {
     return currentUser;
   }
 
-  Future<AppUser> getUserDetails() async {
-    User currentUser = getCurrentUser()!;
+  Future<AppUser?> getUserDetails() async {
+    User? currentUser = getCurrentUser();
+    final docRef = firestore.collection(USERS_COLLECTION).doc(currentUser!.uid);
 
     DocumentSnapshot<Map<String, dynamic>> documentSnapshot =
-        await firestore.doc(currentUser.uid).get();
+        await docRef.get();
 
-    return AppUser.fromMap(documentSnapshot.data.call()!);
+    return AppUser.fromMap(documentSnapshot.data()!);
   }
 
   //TODO: fix this method

@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:provider/provider.dart';
 import 'package:video_call_app/constants.dart';
+import 'package:video_call_app/provider/user_provider.dart';
 import 'package:video_call_app/resources/firebase_repository.dart';
+import 'package:video_call_app/screens/callscreens/pickup/pickup_layout.dart';
 import 'package:video_call_app/screens/login_screen.dart';
 import 'package:video_call_app/screens/slide_pages/chat_list_screen.dart';
 
@@ -12,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final FirebaseRepository _repository = FirebaseRepository();
-
+  UserProvider provider = UserProvider();
   final PageController pageController = PageController(initialPage: 0);
 
   int currentPage = 0;
@@ -21,6 +25,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _repository.signOut();
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (_) => LoginScreen()));
+  }
+
+  @override
+  void initState() {
+    SchedulerBinding.instance!.addPersistentFrameCallback((timeStamp) {
+      provider = Provider.of(context, listen: false);
+      provider.refreshUser();
+    });
+    super.initState();
   }
 
   List<Widget> _buildPages(BuildContext context) {
@@ -51,36 +64,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBackgroundColor,
-      body: PageView(
-        controller: pageController,
-        onPageChanged: (i) {
-          setState(() {
-            currentPage = i;
-          });
-        },
-        children: _buildPages(context),
-      ),
-      bottomNavigationBar: Container(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 10),
-          child: CupertinoTabBar(
-            activeColor: kLightBlueColor,
-            iconSize: 25,
-            backgroundColor: kBackgroundColor,
-            items: <BottomNavigationBarItem>[
-              BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chats"),
-              BottomNavigationBarItem(icon: Icon(Icons.call), label: 'Calls'),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.person_rounded), label: 'Contacts'),
-            ],
-            onTap: (page) {
-              pageController.animateToPage(page,
-                  duration: Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic);
-            },
-            currentIndex: currentPage,
+    return PickupLayout(
+      scaffold: Scaffold(
+        backgroundColor: kBackgroundColor,
+        body: PageView(
+          controller: pageController,
+          onPageChanged: (i) {
+            setState(() {
+              currentPage = i;
+            });
+          },
+          children: _buildPages(context),
+        ),
+        bottomNavigationBar: Container(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: CupertinoTabBar(
+              activeColor: kLightBlueColor,
+              iconSize: 25,
+              backgroundColor: kBackgroundColor,
+              items: <BottomNavigationBarItem>[
+                BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chats"),
+                BottomNavigationBarItem(icon: Icon(Icons.call), label: 'Calls'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person_rounded), label: 'Contacts'),
+              ],
+              onTap: (page) {
+                pageController.animateToPage(page,
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic);
+              },
+              currentIndex: currentPage,
+            ),
           ),
         ),
       ),

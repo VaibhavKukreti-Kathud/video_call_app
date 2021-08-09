@@ -1,3 +1,4 @@
+import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:video_call_app/models/call.dart';
 import 'package:video_call_app/resources/call_functions.dart';
@@ -62,7 +63,10 @@ class PickupScreen extends StatelessWidget {
                           ? Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CallScreen(call: call),
+                                builder: (context) => CallScreen(
+                                  call: call,
+                                  role: ClientRole.Audience,
+                                ),
                               ),
                             )
                           : {},

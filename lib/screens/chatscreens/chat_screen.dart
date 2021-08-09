@@ -133,7 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
 
         if (snapshot.data == null) {
-          return CircularProgressIndicator();
+          return Container(child: Center(child: CircularProgressIndicator()));
         }
 
         // SchedulerBinding.instance!.addPostFrameCallback((_) {

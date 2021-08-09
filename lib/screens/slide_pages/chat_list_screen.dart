@@ -79,7 +79,7 @@ class _ChatListContainerState extends State<ChatListContainer> {
     return Container(
       child: ListView.builder(
         padding: EdgeInsets.all(0),
-        itemCount: 10,
+        itemCount: 2,
         itemBuilder: (context, index) {
           return Padding(
             padding: EdgeInsets.only(top: index == 0 ? 8.0 : 0),

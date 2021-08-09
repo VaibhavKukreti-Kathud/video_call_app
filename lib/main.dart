@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:video_call_app/constants.dart';
 import 'package:video_call_app/provider/image_upload_provider.dart';
+import 'package:video_call_app/provider/user_provider.dart';
 import 'package:video_call_app/resources/firebase_repository.dart';
 import 'package:video_call_app/screens/homescreen.dart';
 import 'package:video_call_app/screens/login_screen.dart';
@@ -24,12 +25,20 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ImageUploadProvider>(
-      create: (context) => ImageUploadProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => ImageUploadProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => UserProvider(),
+        ),
+      ],
       child: MaterialApp(
         color: kBackgroundColor,
         theme: ThemeData(
             backgroundColor: kBackgroundColor,
+            accentColor: kLightBlueColor,
             colorScheme: ColorScheme.dark(
                 background: kBackgroundColor, primary: kBlueColor),
             buttonColor: kLightBlueColor,

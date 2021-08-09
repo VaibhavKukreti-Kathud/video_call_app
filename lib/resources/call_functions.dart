@@ -8,7 +8,6 @@ class CallMethods {
 
   Stream<DocumentSnapshot> callStream({required String uid}) =>
       callCollection.doc(uid).snapshots();
-
   Future<bool> makeCall({required Call call}) async {
     try {
       call.hasDialled = true;

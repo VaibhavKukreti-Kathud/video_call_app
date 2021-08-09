@@ -12,7 +12,7 @@ class FirebaseRepository {
 
   User? getCurrentUser() => _firebaseMethods.currentUser;
 
-  Future<AppUser> getUserDetails() => _firebaseMethods.getUserDetails();
+  Future<AppUser?> getUserDetails() => _firebaseMethods.getUserDetails();
 
   Future<User?> signIn() => _firebaseMethods.signIn();
 

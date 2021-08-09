@@ -97,7 +97,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           subtitle: Text(
-            searchedUser.email,
+            searchedUser.username,
             style: TextStyle(color: kGreyColor),
           ),
           onLongPress: () {},

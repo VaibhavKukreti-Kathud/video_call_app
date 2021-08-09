@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:video_call_app/models/call.dart';
 import 'package:video_call_app/provider/user_provider.dart';
 import 'package:video_call_app/resources/call_functions.dart';
-
 import 'pickup_screen.dart';
 
 class PickupLayout extends StatelessWidget {
@@ -22,11 +21,9 @@ class PickupLayout extends StatelessWidget {
     return (userProvider.getUser != null)
         ? StreamBuilder<DocumentSnapshot>(
             stream: callMethods.callStream(uid: userProvider.getUser!.uid),
-            builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-              if (snapshot.hasData) {
-                Call call =
-                    Call.fromMap(snapshot.data!.data() as Map<String, dynamic>);
-
+            builder: (context, AsyncSnapshot snapshot) {
+              if (snapshot.hasData && snapshot.data.exists) {
+                Call call = Call.fromMap(snapshot.data.data());
                 if (!call.hasDialled!) {
                   return PickupScreen(call: call);
                 }

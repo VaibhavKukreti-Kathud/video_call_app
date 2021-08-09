@@ -1,23 +1,22 @@
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:video_call_app/const_strings.dart';
 import 'package:video_call_app/models/call.dart';
 import 'package:video_call_app/provider/user_provider.dart';
 import 'package:video_call_app/resources/call_functions.dart';
-import 'package:video_call_app/utils/call_utilities.dart';
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:provider/provider.dart';
-
-import '../../const_strings.dart';
+import 'package:agora_rtc_engine/rtc_engine.dart';
+import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
+import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
 
 class CallScreen extends StatefulWidget {
   final Call call;
+  final ClientRole? role;
 
-  CallScreen({
-    required this.call,
-  });
+  CallScreen({required this.call, this.role});
 
   @override
   _CallScreenState createState() => _CallScreenState();
@@ -25,20 +24,48 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> {
   final CallMethods callMethods = CallMethods();
-
   UserProvider? userProvider;
   late StreamSubscription callStreamSubscription;
-
+  late RtcEngine _engine;
+  final _users = <int>[];
+  final _infoStrings = <String>[];
   bool muted = false;
 
   @override
   void initState() {
-    super.initState();
     addPostFrameCallback();
-    initializeAgora();
+    initialize();
+    super.initState();
   }
 
-  Future<void> initializeAgora() async {
+  addPostFrameCallback() {
+    SchedulerBinding.instance!.addPostFrameCallback((timeStamp) {
+      userProvider = Provider.of<UserProvider>(context, listen: false);
+
+      callStreamSubscription =
+          callMethods.callStream(uid: userProvider!.getUser!.uid).listen((ds) {
+        switch (ds.data()) {
+          case null:
+            Navigator.pop(context);
+            break;
+          default:
+            break;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _users.clear();
+    _engine.leaveChannel();
+    _engine.destroy();
+    callStreamSubscription.cancel();
+  }
+
+  Future<void> initialize() async {
     if (APP_ID.isEmpty) {
       setState(() {
         _infoStrings.add(
@@ -49,140 +76,71 @@ class _CallScreenState extends State<CallScreen> {
       return;
     }
 
-    await _initRtcEngine();
+    await _initAgoraRtcEngine();
     _addAgoraEventHandlers();
-    await RtcEngine.instance!.setParameters(
-        '''{\"che.video.lowBitRateStreamParameter\":{\"width\":320,\"height\":180,\"frameRate\":15,\"bitRate\":140}}''');
-    await RtcEngine.instance!
-        .joinChannel(null, widget.call.channelId!, null, 0);
-  }
-
-  addPostFrameCallback() {
-    SchedulerBinding.instance!.addPostFrameCallback((_) {
-      userProvider = Provider.of<UserProvider>(context, listen: false);
-
-      callStreamSubscription = callMethods
-          .callStream(uid: userProvider!.getUser!.uid)
-          .listen((DocumentSnapshot ds) {
-        // defining the logic
-        switch (ds.data) {
-          case null:
-            // snapshot is null which means that call is hanged and documents are deleted
-            Navigator.pop(context);
-            break;
-
-          default:
-            break;
-        }
-      });
-    });
+    VideoEncoderConfiguration configuration = VideoEncoderConfiguration();
+    configuration.dimensions = VideoDimensions(height: 1920, width: 1080);
+    await _engine.setVideoEncoderConfiguration(configuration);
+    await _engine.joinChannel(
+        '006a441e7316f4941f080d3d9edb24307a3IABe7QRvmGbMe7CtWmAjFnlPmD0MwrI/5cLB8agmvuhUoQvXxAUAAAAAEACZZ/CegWYRYQEAAQCBZhFh',
+        '586',
+        null,
+        0);
   }
 
   /// Create agora sdk instance and initialize
-  Future<void> _initRtcEngine() async {
-    await RtcEngine.create(APP_ID);
-    await RtcEngine.instance!.enableVideo();
+  Future<void> _initAgoraRtcEngine() async {
+    _engine = await RtcEngine.create(APP_ID);
+    await _engine.enableVideo();
+    await _engine.setChannelProfile(ChannelProfile.LiveBroadcasting);
+    await _engine.setClientRole(ClientRole.Broadcaster);
   }
 
   /// Add agora event handlers
   void _addAgoraEventHandlers() {
-    RtcEngine.instance!.get = (dynamic code) {
+    _engine.setEventHandler(RtcEngineEventHandler(error: (code) {
       setState(() {
         final info = 'onError: $code';
         _infoStrings.add(info);
       });
-    };
-
-    @override
-    Future<void> joinChannel(
-        String channel, int uid, int elapsed, int optionalUid,
-        [ChannelMediaOptions? options]) {
+    }, joinChannelSuccess: (channel, uid, elapsed) {
       setState(() {
         final info = 'onJoinChannel: $channel, uid: $uid';
         _infoStrings.add(info);
       });
-    }
-
-    RtcEngine.onUserJoined = (int uid, int elapsed) {
-      setState(() {
-        final info = 'onUserJoined: $uid';
-        _infoStrings.add(info);
-        _users.add(uid);
-      });
-    };
-
-    RtcEngine.onUpdatedUserInfo = (AgoraUserInfo userInfo, int i) {
-      setState(() {
-        final info = 'onUpdatedUserInfo: ${userInfo.toString()}';
-        _infoStrings.add(info);
-      });
-    };
-
-    RtcEngine.onRejoinChannelSuccess = (String string, int a, int b) {
-      setState(() {
-        final info = 'onRejoinChannelSuccess: $string';
-        _infoStrings.add(info);
-      });
-    };
-
-    RtcEngine.onUserOffline = (int a, int b) {
-      callMethods.endCall(call: widget.call);
-      setState(() {
-        final info = 'onUserOffline: a: ${a.toString()}, b: ${b.toString()}';
-        _infoStrings.add(info);
-      });
-    };
-
-    RtcEngine.instance!.onRegisteredLocalUser = (String s, int i) {
-      setState(() {
-        final info = 'onRegisteredLocalUser: string: s, i: ${i.toString()}';
-        _infoStrings.add(info);
-      });
-    };
-
-    RtcEngine.onLeaveChannel = () {
+    }, leaveChannel: (stats) {
       setState(() {
         _infoStrings.add('onLeaveChannel');
         _users.clear();
       });
-    };
-
-    RtcEngine.onConnectionLost = () {
+    }, userJoined: (uid, elapsed) {
       setState(() {
-        final info = 'onConnectionLost';
+        final info = 'userJoined: $uid';
         _infoStrings.add(info);
+        _users.add(uid);
       });
-    };
-
-    RtcEngine.onUserOffline = (int uid, int reason) {
-      // if call was picked
-
+    }, userOffline: (uid, elapsed) {
+      callMethods.endCall(call: widget.call);
       setState(() {
         final info = 'userOffline: $uid';
         _infoStrings.add(info);
         _users.remove(uid);
       });
-    };
-
-    RtcEngine.firstRemoteVideoFrame = (
-      int uid,
-      int width,
-      int height,
-      int elapsed,
-    ) {
+    }, firstRemoteVideoFrame: (uid, width, height, elapsed) {
       setState(() {
         final info = 'firstRemoteVideo: $uid ${width}x $height';
         _infoStrings.add(info);
       });
-    };
+    }));
   }
 
   /// Helper function to get list of native views
   List<Widget> _getRenderViews() {
-    final List<AgoraRenderWidget> list = [
-      AgoraRenderWidget(0, local: true, preview: true),
-    ];
-    _users.forEach((int uid) => list.add(AgoraRenderWidget(uid)));
+    final List<StatefulWidget> list = [];
+    if (widget.role == ClientRole.Broadcaster) {
+      list.add(RtcLocalView.SurfaceView());
+    }
+    _users.forEach((int uid) => list.add(RtcRemoteView.SurfaceView(uid: uid)));
     return list;
   }
 
@@ -239,6 +197,56 @@ class _CallScreenState extends State<CallScreen> {
     return Container();
   }
 
+  /// Toolbar layout
+  Widget _toolbar() {
+    if (widget.role == ClientRole.Audience) return Container();
+    return Container(
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          RawMaterialButton(
+            onPressed: _onToggleMute,
+            child: Icon(
+              muted ? Icons.mic_off : Icons.mic,
+              color: muted ? Colors.white : Colors.blueAccent,
+              size: 20.0,
+            ),
+            shape: CircleBorder(),
+            elevation: 2.0,
+            fillColor: muted ? Colors.blueAccent : Colors.white,
+            padding: const EdgeInsets.all(12.0),
+          ),
+          RawMaterialButton(
+            onPressed: () => callMethods.endCall(call: widget.call),
+            child: Icon(
+              Icons.call_end,
+              color: Colors.white,
+              size: 35.0,
+            ),
+            shape: CircleBorder(),
+            elevation: 2.0,
+            fillColor: Colors.redAccent,
+            padding: const EdgeInsets.all(15.0),
+          ),
+          RawMaterialButton(
+            onPressed: _onSwitchCamera,
+            child: Icon(
+              Icons.switch_camera,
+              color: Colors.blueAccent,
+              size: 20.0,
+            ),
+            shape: CircleBorder(),
+            elevation: 2.0,
+            fillColor: Colors.white,
+            padding: const EdgeInsets.all(12.0),
+          )
+        ],
+      ),
+    );
+  }
+
   /// Info panel to show logs
   Widget _panel() {
     return Container(
@@ -253,7 +261,8 @@ class _CallScreenState extends State<CallScreen> {
             itemCount: _infoStrings.length,
             itemBuilder: (BuildContext context, int index) {
               if (_infoStrings.isEmpty) {
-                return SizedBox();
+                return Text(
+                    "null"); // return type can't be null, a widget was required
               }
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -293,73 +302,11 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {
       muted = !muted;
     });
-    RtcEngine.instance!.muteLocalAudioStream(muted);
+    _engine.muteLocalAudioStream(muted);
   }
 
   void _onSwitchCamera() {
-    RtcEngine.instance!.switchCamera();
-  }
-
-  /// Toolbar layout
-  Widget _toolbar() {
-    return Container(
-      alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          RawMaterialButton(
-            onPressed: _onToggleMute,
-            child: Icon(
-              muted ? Icons.mic : Icons.mic_off,
-              color: muted ? Colors.white : Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: muted ? Colors.blueAccent : Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          ),
-          RawMaterialButton(
-            onPressed: () => callMethods.endCall(
-              call: widget.call,
-            ),
-            child: Icon(
-              Icons.call_end,
-              color: Colors.white,
-              size: 35.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.redAccent,
-            padding: const EdgeInsets.all(15.0),
-          ),
-          RawMaterialButton(
-            onPressed: _onSwitchCamera,
-            child: Icon(
-              Icons.switch_camera,
-              color: Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          )
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    // clear users
-    _users.clear();
-    // destroy sdk
-    RtcEngine.instance!.leaveChannel();
-    RtcEngine.instance!.destroy();
-    callStreamSubscription!.cancel();
-    super.dispose();
+    _engine.switchCamera();
   }
 
   @override
@@ -370,7 +317,7 @@ class _CallScreenState extends State<CallScreen> {
         child: Stack(
           children: <Widget>[
             _viewRows(),
-            // _panel(),
+            _panel(),
             _toolbar(),
           ],
         ),

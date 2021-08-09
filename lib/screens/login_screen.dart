@@ -44,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   Icon(FontAwesomeIcons.google, size: 20, color: Colors.white),
               onPressed: () {
                 print("trying to perform login");
-
                 setState(() {
                   isButtonPressed = true;
                 });
